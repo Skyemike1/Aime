@@ -1,0 +1,6 @@
+{
+  "name": "Zenshin Anime Streamer",
+  "description": "A fully functional premium anime streaming website integrating Zenshin mappings database API, AniList GraphQL, and multiple high-speed backup players.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
