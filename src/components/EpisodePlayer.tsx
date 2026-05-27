@@ -14,11 +14,8 @@ interface EpisodePlayerProps {
 
 type ServerKey = 'vidlink_query' | 'vidlink_path' | 'vidsrc_me' | 'vidsrc_cc' | 'vidsrc_to' | 'embed_su';
 
-const PROXY_BASE = import.meta.env.VITE_PROXY_URL as string | undefined;
-
 function proxyUrl(directUrl: string): string {
-  if (!PROXY_BASE) return directUrl;
-  return `${PROXY_BASE}/proxy?url=${encodeURIComponent(directUrl)}`;
+  return `/api/proxy?url=${encodeURIComponent(directUrl)}`;
 }
 
 export default function EpisodePlayer({
@@ -89,38 +86,22 @@ export default function EpisodePlayer({
         </div>
       </div>
 
-      {/* Proxy status notice */}
-      {PROXY_BASE ? (
-        <div className="bg-green-950/20 border border-green-500/20 p-3.5 sm:p-4 rounded-xl text-left space-y-2">
-          <div className="flex items-start space-x-2.5">
-            <HelpCircle className="text-green-400 mt-0.5 shrink-0" size={16} />
-            <div className="space-y-1">
-              <h4 className="text-xs font-bold text-green-300 tracking-wide uppercase">
-                Proxy Server Active
-              </h4>
-              <p className="text-xxs sm:text-xs text-gray-400 leading-relaxed font-light">
-                Video requests are routed through your proxy server to bypass domain restrictions.
-                If a player still fails, try switching to a backup server below.
-              </p>
-            </div>
+      {/* Proxy active notice */}
+      <div className="bg-green-950/20 border border-green-500/20 p-3.5 sm:p-4 rounded-xl text-left space-y-2">
+        <div className="flex items-start space-x-2.5">
+          <HelpCircle className="text-green-400 mt-0.5 shrink-0" size={16} />
+          <div className="space-y-1">
+            <h4 className="text-xs font-bold text-green-300 tracking-wide uppercase">
+              Proxy Server Active
+            </h4>
+            <p className="text-xxs sm:text-xs text-gray-400 leading-relaxed font-light">
+              Video requests are routed through the proxy to bypass domain restrictions.
+              If a player still fails, try switching to a backup server below or use{' '}
+              <span className="text-green-300 font-medium">"Open Direct Link"</span> to watch in a new tab.
+            </p>
           </div>
         </div>
-      ) : (
-        <div className="bg-violet-950/20 border border-violet-500/20 p-3.5 sm:p-4 rounded-xl text-left space-y-2">
-          <div className="flex items-start space-x-2.5">
-            <HelpCircle className="text-violet-400 mt-0.5 shrink-0" size={16} />
-            <div className="space-y-1">
-              <h4 className="text-xs font-bold text-violet-350 tracking-wide uppercase">
-                Proxy Not Configured
-              </h4>
-              <p className="text-xxs sm:text-xs text-gray-400 leading-relaxed font-light">
-                Set <span className="text-violet-300 font-mono">VITE_PROXY_URL</span> in your environment to your Railway proxy URL for best playback.
-                If the player is blank, use <span className="text-violet-300 font-medium">"Open Direct Link"</span> to watch in a new tab.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Embed frame wrapper */}
       <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-[#050505] shadow-inner group">
