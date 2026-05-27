@@ -14,10 +14,6 @@ interface EpisodePlayerProps {
 
 type ServerKey = 'vidlink_query' | 'vidlink_path' | 'vidsrc_me' | 'vidsrc_cc' | 'vidsrc_to' | 'embed_su';
 
-function proxyUrl(directUrl: string): string {
-  return `/api/proxy?url=${encodeURIComponent(directUrl)}`;
-}
-
 export default function EpisodePlayer({
   anilistId,
   malId,
@@ -30,13 +26,13 @@ export default function EpisodePlayer({
 }: EpisodePlayerProps) {
   const [activeServer, setActiveServer] = useState<ServerKey>('vidlink_query');
 
-  const getDirectUrl = (server: ServerKey, ep: string): string => {
+  const getServerUrl = (server: ServerKey, ep: string): string => {
     const showId = malId || anilistId;
     switch (server) {
       case 'vidlink_query':
-        return `https://vidlink.pro/embed/anime/${anilistId}?episode=${ep}&primaryColor=a78bfa`;
+        return `https://vidlink.pro/embed/anime/${anilistId}?episode=${ep}&primaryColor=a78bfa&autoplay=true`;
       case 'vidlink_path':
-        return `https://vidlink.pro/embed/anime/${anilistId}/${ep}?primaryColor=a78bfa`;
+        return `https://vidlink.pro/embed/anime/${anilistId}/${ep}?primaryColor=a78bfa&autoplay=true`;
       case 'vidsrc_me':
         return `https://vidsrc.me/embed/anime/${showId}/${ep}`;
       case 'vidsrc_cc':
@@ -50,17 +46,13 @@ export default function EpisodePlayer({
     }
   };
 
-  const getServerUrl = (server: ServerKey, ep: string): string => {
-    return proxyUrl(getDirectUrl(server, ep));
-  };
-
-  const servers: Array<{ id: ServerKey; name: string; speed: string }> = [
-    { id: 'vidlink_query', name: 'VidLink (Query)', speed: 'Ultra' },
-    { id: 'vidlink_path', name: 'VidLink (Path)', speed: 'Ultra' },
-    { id: 'vidsrc_me', name: 'VidSrc.me', speed: 'High' },
-    { id: 'vidsrc_cc', name: 'VidSrc.cc', speed: 'Fast' },
-    { id: 'vidsrc_to', name: 'VidSrc.to', speed: 'Normal' },
-    { id: 'embed_su', name: 'Embed.su', speed: 'High' },
+  const servers: Array<{ id: ServerKey; name: string }> = [
+    { id: 'vidlink_query', name: 'VidLink' },
+    { id: 'vidlink_path', name: 'VidLink (Alt)' },
+    { id: 'vidsrc_me', name: 'VidSrc.me' },
+    { id: 'vidsrc_cc', name: 'VidSrc.cc' },
+    { id: 'vidsrc_to', name: 'VidSrc.to' },
+    { id: 'embed_su', name: 'Embed.su' },
   ];
 
   return (
@@ -73,7 +65,7 @@ export default function EpisodePlayer({
             <span>NOW PLAYING</span>
           </div>
           <h2 className="text-lg md:text-xl font-serif italic text-white mt-1">
-            Episode {episodeNumber} {episodeTitle ? `: ${episodeTitle}` : ''}
+            Episode {episodeNumber}{episodeTitle ? `: ${episodeTitle}` : ''}
           </h2>
         </div>
 
@@ -82,55 +74,38 @@ export default function EpisodePlayer({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
           </span>
-          <span>Online - {servers.find((s) => s.id === activeServer)?.name}</span>
+          <span>Online — {servers.find((s) => s.id === activeServer)?.name}</span>
         </div>
       </div>
 
-      {/* Proxy active notice */}
-      <div className="bg-green-950/20 border border-green-500/20 p-3.5 sm:p-4 rounded-xl text-left space-y-2">
-        <div className="flex items-start space-x-2.5">
-          <HelpCircle className="text-green-400 mt-0.5 shrink-0" size={16} />
-          <div className="space-y-1">
-            <h4 className="text-xs font-bold text-green-300 tracking-wide uppercase">
-              Proxy Server Active
-            </h4>
-            <p className="text-xxs sm:text-xs text-gray-400 leading-relaxed font-light">
-              Video requests are routed through the proxy to bypass domain restrictions.
-              If a player still fails, try switching to a backup server below or use{' '}
-              <span className="text-green-300 font-medium">"Open Direct Link"</span> to watch in a new tab.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Embed frame wrapper */}
-      <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-[#050505] shadow-inner group">
+      {/* Embed frame — fills aspect-video, plays inside the page */}
+      <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-inner">
         <iframe
+          key={`${activeServer}-${episodeNumber}`}
           src={getServerUrl(activeServer, episodeNumber)}
-          className="w-full h-full border-0 rounded-2xl"
+          className="absolute inset-0 w-full h-full border-0"
           allowFullScreen
-          scrolling="no"
+          allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
           referrerPolicy="no-referrer"
-          allow="autoplay; encrypted-media; picture-in-picture"
-          title={`Player Frame | Episode ${episodeNumber}`}
+          title={`Episode ${episodeNumber}`}
         />
       </div>
 
-      {/* Backup Servers Block */}
+      {/* Server selector + controls */}
       <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex-1 flex flex-col space-y-2 text-left">
-          <div className="flex items-center space-x-1 flex-wrap gap-y-1">
+          <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
             <HelpCircle size={13} className="text-gray-500" />
-            <span className="text-xxs font-bold text-gray-500 uppercase tracking-wider mr-2">
-              If player fails, switch backup server or
+            <span className="text-xxs font-bold text-gray-500 uppercase tracking-wider">
+              Blank screen? Switch server or
             </span>
             <a
-              href={getDirectUrl(activeServer, episodeNumber)}
+              href={getServerUrl(activeServer, episodeNumber)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xxs font-bold text-violet-400 hover:text-violet-300 underline uppercase tracking-wider flex items-center gap-0.5"
             >
-              <span>Open Direct Link</span>
+              Open in New Tab
               <ExternalLink size={10} />
             </a>
           </div>
@@ -152,36 +127,35 @@ export default function EpisodePlayer({
           </div>
         </div>
 
-        {/* Player Controls */}
         <div className="flex items-center space-x-2">
           {hasPrev && (
             <button
               onClick={onPrev}
-              className="px-4 py-2 border border-white/10 bg-[#080808] text-[#E0E0E0] font-semibold text-xs rounded-xl hover:text-violet-400 hover:border-violet-500/30 transition-all cursor-pointer shadow flex items-center space-x-1"
+              className="px-4 py-2 border border-white/10 bg-[#080808] text-[#E0E0E0] font-semibold text-xs rounded-xl hover:text-violet-400 hover:border-violet-500/30 transition-all cursor-pointer shadow"
             >
-              <span>Prev</span>
+              Prev
             </button>
           )}
 
           <button
             onClick={() => {
-              const current = activeServer;
-              const temp = current === 'vidlink_query' ? 'vidsrc_me' : 'vidlink_query';
-              setActiveServer(temp);
-              setTimeout(() => setActiveServer(current), 10);
+              const cur = activeServer;
+              const tmp: ServerKey = cur === 'vidlink_query' ? 'vidsrc_me' : 'vidlink_query';
+              setActiveServer(tmp);
+              setTimeout(() => setActiveServer(cur), 50);
             }}
             className="p-2 border border-white/10 bg-[#080808] text-gray-400 hover:text-violet-400 rounded-xl hover:border-violet-500/30 transition-colors cursor-pointer"
-            title="Reload Video Player"
+            title="Reload player"
           >
             <RefreshCw size={13} />
           </button>
 
           <a
-            href={getDirectUrl(activeServer, episodeNumber)}
+            href={getServerUrl(activeServer, episodeNumber)}
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 border border-white/10 bg-[#080808] text-gray-400 hover:text-violet-400 rounded-xl hover:border-violet-500/30 transition-colors cursor-pointer flex items-center justify-center"
-            title="Open in Direct Tab"
+            title="Open in new tab"
           >
             <ExternalLink size={13} />
           </a>
@@ -189,9 +163,9 @@ export default function EpisodePlayer({
           {hasNext && (
             <button
               onClick={onNext}
-              className="px-5 py-2 bg-white hover:bg-violet-400 font-bold text-xs rounded-xl text-black transition-all cursor-pointer shadow-md flex items-center space-x-1"
+              className="px-5 py-2 bg-white hover:bg-violet-400 font-bold text-xs rounded-xl text-black transition-all cursor-pointer shadow-md"
             >
-              <span>Next</span>
+              Next
             </button>
           )}
         </div>
