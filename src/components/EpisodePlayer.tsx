@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, RefreshCw, Milestone, Sparkles, ExternalLink } from 'lucide-react';
+import { HelpCircle, RefreshCw, Sparkles, ExternalLink } from 'lucide-react';
 
 interface EpisodePlayerProps {
   anilistId: number;
@@ -14,6 +14,13 @@ interface EpisodePlayerProps {
 
 type ServerKey = 'vidlink_query' | 'vidlink_path' | 'vidsrc_me' | 'vidsrc_cc' | 'vidsrc_to' | 'embed_su';
 
+const PROXY_BASE = import.meta.env.VITE_PROXY_URL as string | undefined;
+
+function proxyUrl(directUrl: string): string {
+  if (!PROXY_BASE) return directUrl;
+  return `${PROXY_BASE}/proxy?url=${encodeURIComponent(directUrl)}`;
+}
+
 export default function EpisodePlayer({
   anilistId,
   malId,
@@ -26,7 +33,7 @@ export default function EpisodePlayer({
 }: EpisodePlayerProps) {
   const [activeServer, setActiveServer] = useState<ServerKey>('vidlink_query');
 
-  const getServerUrl = (server: ServerKey, ep: string): string => {
+  const getDirectUrl = (server: ServerKey, ep: string): string => {
     const showId = malId || anilistId;
     switch (server) {
       case 'vidlink_query':
@@ -46,10 +53,14 @@ export default function EpisodePlayer({
     }
   };
 
+  const getServerUrl = (server: ServerKey, ep: string): string => {
+    return proxyUrl(getDirectUrl(server, ep));
+  };
+
   const servers: Array<{ id: ServerKey; name: string; speed: string }> = [
     { id: 'vidlink_query', name: 'VidLink (Query)', speed: 'Ultra' },
     { id: 'vidlink_path', name: 'VidLink (Path)', speed: 'Ultra' },
-    { id: 'vidsrc_me', name: 'VidSrc.me (Sandbox Friendly)', speed: 'High' },
+    { id: 'vidsrc_me', name: 'VidSrc.me', speed: 'High' },
     { id: 'vidsrc_cc', name: 'VidSrc.cc', speed: 'Fast' },
     { id: 'vidsrc_to', name: 'VidSrc.to', speed: 'Normal' },
     { id: 'embed_su', name: 'Embed.su', speed: 'High' },
@@ -69,7 +80,6 @@ export default function EpisodePlayer({
           </h2>
         </div>
 
-        {/* Dynamic server info */}
         <div className="text-xxs font-medium bg-white/5 border border-white/5 text-gray-400 px-3 py-1.5 rounded-lg flex items-center space-x-1.5 shadow-sm">
           <span className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -79,20 +89,38 @@ export default function EpisodePlayer({
         </div>
       </div>
 
-      {/* Embedded Iframe Sandboxed restriction alert */}
-      <div className="bg-violet-950/20 border border-violet-500/20 p-3.5 sm:p-4 rounded-xl text-left space-y-2">
-        <div className="flex items-start space-x-2.5">
-          <HelpCircle className="text-violet-400 mt-0.5 shrink-0" size={16} />
-          <div className="space-y-1">
-            <h4 className="text-xs font-bold text-violet-350 tracking-wide uppercase">
-              Embedded Playback Inside Sandboxed Environments
-            </h4>
-            <p className="text-xxs sm:text-xs text-gray-400 leading-relaxed font-light">
-              Most streaming providers block scripts or cookies when loaded in a double-nested cloud development workspace iframe (for security and bot prevention). If the screen is blank, spins infinitely, or displays a Cloudflare block page, simply click the <span className="text-violet-300 font-medium">"Open Direct Link"</span> or the tab icon to play with hardware acceleration in a fresh tab!
-            </p>
+      {/* Proxy status notice */}
+      {PROXY_BASE ? (
+        <div className="bg-green-950/20 border border-green-500/20 p-3.5 sm:p-4 rounded-xl text-left space-y-2">
+          <div className="flex items-start space-x-2.5">
+            <HelpCircle className="text-green-400 mt-0.5 shrink-0" size={16} />
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold text-green-300 tracking-wide uppercase">
+                Proxy Server Active
+              </h4>
+              <p className="text-xxs sm:text-xs text-gray-400 leading-relaxed font-light">
+                Video requests are routed through your proxy server to bypass domain restrictions.
+                If a player still fails, try switching to a backup server below.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-violet-950/20 border border-violet-500/20 p-3.5 sm:p-4 rounded-xl text-left space-y-2">
+          <div className="flex items-start space-x-2.5">
+            <HelpCircle className="text-violet-400 mt-0.5 shrink-0" size={16} />
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold text-violet-350 tracking-wide uppercase">
+                Proxy Not Configured
+              </h4>
+              <p className="text-xxs sm:text-xs text-gray-400 leading-relaxed font-light">
+                Set <span className="text-violet-300 font-mono">VITE_PROXY_URL</span> in your environment to your Railway proxy URL for best playback.
+                If the player is blank, use <span className="text-violet-300 font-medium">"Open Direct Link"</span> to watch in a new tab.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Embed frame wrapper */}
       <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-[#050505] shadow-inner group">
@@ -109,7 +137,6 @@ export default function EpisodePlayer({
 
       {/* Backup Servers Block */}
       <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        {/* Selecting Servers options */}
         <div className="flex-1 flex flex-col space-y-2 text-left">
           <div className="flex items-center space-x-1 flex-wrap gap-y-1">
             <HelpCircle size={13} className="text-gray-500" />
@@ -117,7 +144,7 @@ export default function EpisodePlayer({
               If player fails, switch backup server or
             </span>
             <a
-              href={getServerUrl(activeServer, episodeNumber)}
+              href={getDirectUrl(activeServer, episodeNumber)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xxs font-bold text-violet-400 hover:text-violet-300 underline uppercase tracking-wider flex items-center gap-0.5"
@@ -157,9 +184,7 @@ export default function EpisodePlayer({
 
           <button
             onClick={() => {
-              // Refresh Iframe reload hack
               const current = activeServer;
-              // Set to a different server momentarily then back to force reload
               const temp = current === 'vidlink_query' ? 'vidsrc_me' : 'vidlink_query';
               setActiveServer(temp);
               setTimeout(() => setActiveServer(current), 10);
@@ -171,7 +196,7 @@ export default function EpisodePlayer({
           </button>
 
           <a
-            href={getServerUrl(activeServer, episodeNumber)}
+            href={getDirectUrl(activeServer, episodeNumber)}
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 border border-white/10 bg-[#080808] text-gray-400 hover:text-violet-400 rounded-xl hover:border-violet-500/30 transition-colors cursor-pointer flex items-center justify-center"
