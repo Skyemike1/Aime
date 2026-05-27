@@ -284,6 +284,7 @@ export default function AnimeDetail({ anime, onClose }: AnimeDetailProps) {
                   <EpisodePlayer
                     anilistId={anime.id}
                     malId={anime.idMal || zenshinData?.mappings?.mal_id}
+                    animeTitle={anime.title.english || anime.title.romaji}
                     episodeNumber={selectedEpisode}
                     episodeTitle={
                       zenshinData?.episodes?.[selectedEpisode]?.title?.en ||
